@@ -8,7 +8,7 @@ import {fetchRecipes} from "../utils";
 
 const Recipes = () => {
     const [recipes, setRecipes] = useState([])
-    const [query, setQuery] = useState('Beef')
+    const [query, setQuery] = useState('meat')
     const [limit, setLimit] = useState(30)
     const [loading, setLoading] = useState(false)
 

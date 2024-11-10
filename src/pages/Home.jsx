@@ -5,7 +5,6 @@ import Recipes from "../components/Recipes";
 const Home = () => {
 
     useEffect(() => {
-        // Сбрасываем прокрутку на верх при монтировании компонента
         window.scrollTo(0, 0);
     }, []);
 
