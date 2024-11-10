@@ -5,52 +5,129 @@ import Loading from "../components/Loading";
 import {Header} from "../components/Header";
 import {AiFillPushpin} from "react-icons/ai";
 import {BsPatchCheck} from "react-icons/bs";
+import {AiOutlineHeart, AiFillHeart} from "react-icons/ai";
 import RecipeCard from "../components/RecipeCard";
+import { getAuth } from 'firebase/auth';
+import { getFirestore, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 
 export const RecipeDetail = () => {
-    const  [recipe, setRecipe] = useState(null)
+    const [recipe, setRecipe] = useState(null)
     const [recipes, setRecipes] = useState([])
     const [loading, setLoading] = useState(false)
+    const [isSaved, setIsSaved] = useState(false)
+    const [user, setUser] = useState(null)
 
     const {id} = useParams()
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const checkIfSaved = async (userId) => {
+        if (!userId) return;
+
+        try {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                setIsSaved(userData.recipes?.includes(id) || false);
+            }
+        } catch (error) {
+            console.error("Error checking saved status:", error);
+        }
+    };
+
+    const handleSaveRecipe = async () => {
+        if (!user) return;
+
+        try {
+            const userRef = doc(db, 'users', user.uid);
+
+            if (isSaved) {
+                await updateDoc(userRef, {
+                    recipes: arrayRemove(id)
+                });
+                setIsSaved(false);
+            } else {
+                await updateDoc(userRef, {
+                    recipes: arrayUnion(id)
+                });
+                setIsSaved(true);
+            }
+        } catch (error) {
+            console.error("Error updating favorites:", error);
+        }
+    };
 
     const getRecipe = async (id) => {
-        try
-        {
+        try {
             setLoading(true)
-
             const data = await fetchRecipe(id)
-
             setRecipe(data)
-
             const recommend = await fetchRecipes({query: recipe?.label, limit:6})
-
             setRecipes(recommend)
-
             setLoading(false)
-        }catch(error){
+        } catch(error) {
             console.log(error)
         }
         setLoading(false)
     }
+
     useEffect(() => {
         getRecipe(id)
         window.scrollTo(0, 0);
     }, [id])
 
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            setUser(user);
+            if (user) {
+                checkIfSaved(user.uid);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [auth, id]);
+
     if(loading) {
         return (
             <div className='w-full h-[100vh] flex items-center justify-center'>
-            <Loading/>
+                <Loading/>
             </div>
         );
     }
 
     return (
         <div className='w-full'>
-        <Header
-        title={recipe?.label} image ={recipe?.image}
-        />
+            <Header
+                title={recipe?.label}
+                image={recipe?.image}
+            />
+
+            {/* Save Button */}
+            <div className="flex justify-center mt-4">
+                {user ? (
+                    <button
+                        onClick={handleSaveRecipe}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
+                            isSaved
+                                ? 'bg-red-500 text-white'
+                                : 'bg-gray-700 text-white hover:bg-gray-600'
+                        }`}
+                    >
+                        {isSaved ? (
+                            <>
+                                <AiFillHeart /> Saved
+                            </>
+                        ) : (
+                            <>
+                                <AiOutlineHeart /> Save to Favorites
+                            </>
+                        )}
+                    </button>
+                ) : (
+                    <p className="text-gray-400">Sign up to save in favorites</p>
+                )}
+            </div>
+
             <div className='w-full px-4 lg:px-20 pt-5'>
                 <div className='flex gap-10 items-center justify-center px-4'>
                     <div className='flex flex-col justify-between'>

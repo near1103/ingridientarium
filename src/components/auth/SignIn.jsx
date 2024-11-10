@@ -2,21 +2,40 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
 import { auth } from "../../firebase";
 import { Link, useNavigate } from "react-router-dom"; // Import useNavigate
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 
 const SignIn = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate(); // Initialize useNavigate
+    const db = getFirestore(); // Initialize Firestore
 
     function logIn(e) {
         e.preventDefault();
         signInWithEmailAndPassword(auth, email, password)
-            .then((user) => {
+            .then(async (userCredential) => {
+                const user = userCredential.user;
                 console.log(user);
                 setError("");
                 setEmail("");
                 setPassword("");
+
+                // Получаем UID пользователя
+                const userId = user.uid;
+
+                // Проверяем, есть ли уже документ пользователя в Firestore
+                const userDocRef = doc(db, 'users', userId);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (!userDocSnap.exists()) {
+                    // Если нет, создаем новый документ с полем `recipes`
+                    await setDoc(userDocRef, {
+                        recipes: [] // Можно добавить другие поля, если нужно
+                    });
+                }
+
+                // Редиректим на главную страницу
                 navigate("/"); // Redirect to /home on successful login
             })
             .catch((error) => {
@@ -60,3 +79,4 @@ const SignIn = () => {
 };
 
 export default SignIn;
+

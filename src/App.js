@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import RecipeDetail from "./pages/RecipeDetail";
 import SignUp from "./components/auth/SignUp";
 import SignIn from "./components/auth/SignIn";
+import Favorites from "./components/Favorites";
 
 function Layout() {
     return (
@@ -25,6 +26,7 @@ function App() {
                     <Route index element={<Home />} />
                     <Route path="signup" element={<SignUp />} />
                     <Route path="signin" element={<SignIn />} />
+                    <Route path="favorites" element={<Favorites />} />
                     <Route path="recipes/:id" element={<RecipeDetail />} />
                 </Route>
             </Routes>
